@@ -11,7 +11,7 @@ public class Constants {
     public static final String INTEGER = "Integer";
     public static final String BOOLEAN = "Boolean";
     public static final String PERMISSIO_RWXR = "rwxr-x---";
-    public static final String SERIAL_VERSION_UUID = "serialVersionUUID";
+    public static final String SERIAL_VERSION_UID = "serialVersionUID";
     public static final String TARGET_PATH = "src/main/resources/swagger/examples";
 
     public static final String ERROR_TYRING_TO_GENERATE_FILE = "Error trying to generate file";

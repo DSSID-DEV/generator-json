@@ -7,6 +7,7 @@
     <groupId>com.dssid.dev</groupId>
     <artifactId>generator-json</artifactId>
     <version>1.0.0</version>
+    <description>Generator Json automates the generation of JSON from Java classes.</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
