@@ -1,8 +1,6 @@
 package com.dssid.dev;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -101,7 +98,7 @@ public class GeneratorJson {
                     .nameForField(mapper.getSerializationConfig(), null, field.getName());
 
             //Temos que ignorar o atributo serialVersionUUID
-            if(name.equals(SERIAL_VERSION_UUID)) return;
+            if(name.equals(SERIAL_VERSION_UID)) return;
 
             //Iniciar as verificações de tipo de dados das propriedade e adicionar os valores
             if(type == String.class) node.put(name, TEXT_.concat(name));
@@ -124,8 +121,32 @@ public class GeneratorJson {
                 //Verifica se é do tipo String e atribui valores se acondição for verdadeira
                 if(elementType == String.class) {
                     //Adiciona strings no array do tipo ArrayNode
-                    array.add(elementType.getName().concat("_1"));
-                    array.add(elementType.getName().concat("_2"));
+                    array.add(TEXT_.concat("_1"));
+                    array.add(TEXT_.concat("_2"));
+                }
+                else if(isNumberTypeInteger(elementType)) {
+                    array.add(1);
+                    array.add(2);
+                }
+                else if(isNumberTypeFloat(elementType)) {
+                    array.add(1.0);
+                    array.add(2.0);
+                }
+                else if(isTypeDateOrLocalDate(elementType)) {
+                    array.add(LocalDate.now().toString());
+                    array.add(LocalDate.now().plusDays(30).toString());
+                }
+                else if(isTypeLocalDateTime(elementType)) {
+                    array.add(LocalDateTime.now().toString());
+                    array.add(LocalDateTime.now().plusDays(30).toString());
+                }
+                else if(isTypeEnum(elementType)) {
+                    array.add(ENUM_.concat("1"));
+                    array.add(ENUM_.concat("2"));
+                }
+                else if(isTypeBoolean(elementType)) {
+                    array.add(true);
+                    array.add(false);
                 }
                 else {
                     //De forma recursiva ele entra para gerar estrutura do json do objeto encontrado
