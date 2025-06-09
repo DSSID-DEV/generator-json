@@ -80,21 +80,25 @@ Você pode criar essa classe dentro de um novo pacote se quiser organizar melhor
 ### Exemplo de classe:
 
 ```java
-public class Util {
-    // Defina um Path onde será criado os arquivos
-    private static final String PATH = "src/main/resources/swagger/examples";
 
-    public static void main(String[] args) throws IOException {
-        var geradorJson = new JsonGenarator();
+import java.util.List;
 
-        boolean canRun = geradorJson
-                .verificarDominiosDeClasse(List
-                        .of(ResponsePayment.class, CashInDTO.class, BankCashInDTO.class));
+@Slf4j
+public class Utils {
 
-        if (canRun)
-            geradorJson.genarateJsonFile(PATH);
-        else
-            log.info("No action was taken, you exited the operation!");
-    }
+  //Defina um Path onde será criado os arquivos
+  private static final String PATH = "src/main/resources/swagger.examples";
+  private static final List<Class<?>> CLASSES =
+          List.of(ResponsePayment.class, CashInDTO.class, BankCashInDTO.class);
+
+  public static void main(String[] args) throws IOException {
+
+    var geradorJson = new GeneratorJson();
+    boolean canRun = geradorJson
+            .checkValidityOfClass(List
+                    .of(CLASSES));
+    if (canRun) geradorJson.now(PATH);
+    else log.info("No action was taken, you exited the operation!");
+  }
 }
 ```
