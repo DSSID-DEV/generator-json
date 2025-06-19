@@ -42,7 +42,7 @@ public class GeneratorJson {
         var target = definePath(path);
 
         //Criar o diretório definido
-        createDirecoties(target);
+        createDirectories(target);
 
         //Criar um ObjectMapper
         var mapper = new ObjectMapper();
@@ -108,6 +108,7 @@ public class GeneratorJson {
             else if(isTypeLocalDateTime(type)) node.put(name, LocalDateTime.now().toString());
             else if(isTypeBoolean(type)) node.put(name, true);
             else if(isTypeEnum(type)) {
+                //TODO: resolver retorno do enum (não está pegando o valor quando é paramentrizado)
                 getValueEnum(name, type, node);
             }
             //Verificar se a propriedade é uma coleção do tipo lista ou array
