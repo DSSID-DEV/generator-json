@@ -2,7 +2,7 @@ package com.dssid.dev.utils;
 
 
 import com.dssid.dev.domain.model.Clazz;
-import com.dssid.dev.enums.METHOD;
+import com.dssid.dev.enums.VerbHttp;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -23,33 +23,36 @@ import static com.dssid.dev.utils.Utils.getVerbHttp;
 public class VerificationType {
 
     public static boolean isNumberTypeInteger(Class<?> type) {
-        return type == int.class || type == Integer.class || type == long.class || type == Long.class;
+        return type == int.class ||
+                type == Integer.class ||
+                type == long.class ||
+                type == Long.class;
     }
 
     public static boolean isNumberTypeFloat(Class<?> type) {
-        return type == float.class || type == Float.class || type == double.class
-                || type == Double.class || type == BigDecimal.class;
+        return type == float.class ||
+                type == Float.class ||
+                type == double.class ||
+                type == Double.class ||
+                type == BigDecimal.class;
     }
 
-    public static boolean isMappingType(NodeList<AnnotationExpr> annotations) {
-        return annotations.stream().map(AnnotationExpr::getNameAsString)
-                .allMatch(annotation -> ANNOTATIONS_MAPPING.contains(annotation));
+    public static boolean isTypeBoolean(Class<?> type) {
+        return type == boolean.class ||
+                type == Boolean.class;
     }
 
-    public static boolean methodIsNotGetOrDelete(String method) {
-        return !METHOD.GET.getValue().equals(method) && !!METHOD.DELETE.getValue().equals(method);
+    public static boolean isTypeDateOrLocalDate(Class<?> type) {
+        return type == Date.class ||
+                type == LocalDate.class;
     }
+
+    public static boolean isTypeLocalDateTime(Class<?> type) {
+        return type == LocalDateTime.class;
+    }
+
     public static boolean isMappingType(NodeList<AnnotationExpr> annotations, String verbHttp) {
         return getVerbHttp(annotations).equals(verbHttp);
-    }
-
-    public static boolean containsAnnotationOfSwagger(NodeWithAnnotations<?> annotations) {
-        var contains = false;
-        contains = annotations
-                .getAnnotations()
-                .stream()
-                .anyMatch(annotation -> annotation.getNameAsString().equals(OPERATION));
-        return contains;
     }
 
     public static boolean hasSingleParameter(List<Clazz> parameters) {
@@ -58,18 +61,6 @@ public class VerificationType {
 
     public static boolean hasManyParameters(List<Clazz> parameters) {
         return parameters.size()  > 1;
-    }
-
-    public static boolean isTypeBoolean(Class<?> type) {
-        return type == boolean.class || type == Boolean.class;
-    }
-
-    public static boolean isTypeDateOrLocalDate(Class<?> type) {
-        return type == Date.class || type == LocalDate.class;
-    }
-
-    public static boolean isTypeLocalDateTime(Class<?> type) {
-        return type == LocalDateTime.class;
     }
 
     public static boolean isTypeEnum(Class<?> type) {
@@ -118,17 +109,31 @@ public class VerificationType {
         return isNumberTypeFloat(clazz);
     }
 
-    public static boolean isPost(METHOD method) {
-        return method.equals(METHOD.POST);
+    public static boolean isPost(String verbHttp) {
+        return verbHttp.equals(VerbHttp.POST.name());
     }
 
-    public static boolean isPutOrPatch(METHOD method) {
-        return !method.equals(METHOD.POST) &&
-                (method.equals(METHOD.PUT) || method.equals(METHOD.PATCH));
+    public static boolean isPut(String verbHttp) {
+        return verbHttp.equals(VerbHttp.PUT.name());
     }
-    public static boolean isGet(METHOD method) {
-        return !isPost(method) && method.equals(METHOD.GET);
+
+    public static boolean isPatch(String verbHttp) {
+        return  verbHttp.equals(VerbHttp.PATCH.name());
     }
+
+    public static boolean isPutOrPatch(String verbHttp) {
+        return isPut(verbHttp) || isPatch(verbHttp);
+    }
+
+    public static boolean isGet(String method) {
+        return !isPost(method) && method.equals(VerbHttp.GET.name());
+    }
+
+
+    public static boolean hasBody(List<Clazz> parameters) {
+        return !parameters.isEmpty();
+    }
+
     public static boolean isNotBlank(String str) {
         return StringUtils.isNotBlank(str);
     }
@@ -164,5 +169,4 @@ public class VerificationType {
                 .supportedFileAttributeViews()
                 .contains(POSIX);
     }
-
 }

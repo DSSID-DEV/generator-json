@@ -2,7 +2,7 @@ package com.dssid.dev.utils;
 
 import com.dssid.dev.domain.model.Clazz;
 import com.dssid.dev.domain.model.Structure;
-import com.dssid.dev.enums.METHOD;
+import com.dssid.dev.enums.VerbHttp;
 import com.dssid.dev.enums.TypeParameter;
 import com.dssid.dev.enums.TypeReturn;
 import com.github.javaparser.StaticJavaParser;
@@ -12,7 +12,6 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +61,7 @@ public class SwaggerBuilder {
                 memberValuePairs
         );
     }
+
     private static void createAnnotation(NodeList<MemberValuePair> memberValuePairs, Class<?> controller) {
         LOG.info("Adding name and description of TAG annotation");
         memberValuePairs
@@ -72,50 +72,40 @@ public class SwaggerBuilder {
 
     public static void addDocumentationOfSwaggerForMethod(MethodDeclaration methodDeclaration, Structure methodStruct) {
         LOG.info("Checking if the mapping is contained in the method");
-//        if(!isMappingType(methodDeclaration.getAnnotations())) return;
-        if(!isMappingType(methodDeclaration.getAnnotations(), methodStruct.getVerb())) return;
-
-//        LOG.info("Get the http verb from the method");
-//        var annotationMapping = getVerbHttp(methodDeclaration.getAnnotations());
-
-//        Class<?> requestBody = null;
-//        LOG.info("Checking if mapping is GET OR DELETE");
-//        if (methodIsNotGetOrDelete(methodStruct.getVerb()))
-//            requestBody = methodDeclaration.getBody().getClass();
-
-        LOG.info("Getting type of return");
-//        var responseObject = extractObject(methodDeclaration, true);
+        if(!isMappingType(methodDeclaration.getAnnotations(), methodStruct.getVerbHttp())) return;
 
         //Criar tag Operation
         LOG.info("Create @Operation of method ", methodDeclaration.getNameAsString());
-//        var operation = buildAnnotationOperation(methodDeclaration, requestBody, METHOD.valueOf(methodStruct.getVerb()));
-        var operation = buildAnnotationOperation(methodStruct, METHOD.valueOf(methodStruct.getVerb()));
+        var operation = buildAnnotationOperation(methodStruct, VerbHttp.valueOf(methodStruct.getVerbHttp()));
         methodDeclaration.addAnnotation(operation);
 
         //Criar tag ApiApplication
         LOG.info("Create @Application(s) of method ", methodDeclaration.getNameAsString());
         var apiResponseAnnotation = buildApiResponseAnnotation(methodStruct);
         methodDeclaration.addAnnotation(apiResponseAnnotation);
-
     }
 
-    private static NormalAnnotationExpr buildAnnotationOperation(Structure structure, METHOD verbHttp) {
+    private static NormalAnnotationExpr buildAnnotationOperation(Structure structure, VerbHttp verbHttp) {
         var methodName = formatarCamelCaseParaEspacado(structure.getMethodName());
 
         boolean hasBody = hasBody(structure.getParameters().get(TypeParameter.BODY));
 
         String object = !structure.getParameters().get(TypeParameter.BODY).isEmpty() ?
                 structure.getParameters().get(TypeParameter.BODY).get(0).getType() : OBJECT;
+        structure.addObjectName(object);
 
         LOG.info("Building annotation @Operation of method " + structure.getMethodName());
         LOG.info("Defining summary of method operation " + structure.getMethodName());
-        var summary = createSummaryAndDescription(verbHttp)[SUMMARY].concat(hasBody ? object : "");
+        var summary = createSummaryAndDescription(structure)[SUMMARY].concat(hasBody ? object :
+                extractControllerName(structure.getControllerName()));
 
         LOG.info("Defining description of method operation " + structure.getMethodName());
-        var description = createSummaryAndDescription(verbHttp)[DESCRIPTION]
-                .concat(hasBody ? methodName.concat(" " + object ) : methodName);
+        var description = createSummaryAndDescription(structure)[DESCRIPTION]
+                .concat(methodName.concat(" ")
+                        .concat(hasBody ?  object :
+                                extractControllerName(structure.getControllerName())));
 
-        var operation = buildOperation(summary, description, verbHttp);
+        var operation = buildOperation(summary, description, structure.getVerbHttp());
 
         LOG.info("Checking if method " + structure.getMethodName() + "has parameter(s)");
         if(hasParameters(structure.getParameters())) {
@@ -129,58 +119,9 @@ public class SwaggerBuilder {
         return operation;
     }
 
-//    private static NormalAnnotationExpr buildAnnotationOperation(MethodDeclaration methodDeclaration, Class<?> requestBody, METHOD method) {
-//        var methodName = formatarCamelCaseParaEspacado(methodDeclaration.getNameAsString());
-//        String object = requestBody == null ? OBJECT : requestBody.getSimpleName();
-//
-//        LOG.info("Building annotation @Operation of method " + methodDeclaration.getNameAsString());
-//        LOG.info("Defining summary of method operation " + methodDeclaration.getNameAsString());
-//        var summary = createSummaryAndDescription(method)[SUMMARY].concat(object);
-//
-//        LOG.info("Defining description of method operation " + methodDeclaration.getNameAsString());
-//        var description = createSummaryAndDescription(method)[DESCRIPTION].concat(methodName.concat(" " + object));
-//
-//        var operation = buildOperation(summary, description, method);
-//
-//        var parameters = methodDeclaration.getParameters();
-//
-//        LOG.info("Checking if method " + methodDeclaration.getNameAsString() + "has parameter(s)");
-//        if(!parameters.isEmpty() && hasParameters(parameters)) {
-//            LOG.info("Building annotation @Parameter(s) of " + methodDeclaration.getNameAsString());
-//            var parameter = buildParametersDocumentation(methodDeclaration);
-//            operation.getPairs().add(parameter);
-//        }
-//        LOG.info("Checking if the method has a body");
-//        if(hasBody(parameters)) operation.getPairs().add(buildModelRequestsAndResponse(object, hasBody(parameters)));
-//
-//        return operation;
-//    }
-
-
-    private static boolean hasBody(List<Clazz> parameters) {
-        return !parameters.isEmpty();
-    }
-//    private static boolean hasBody(NodeList<Parameter> parameters) {
-//        for(var parameter : parameters) {
-//            var annotations = parameter.getAnnotations().stream()
-//                    .map(AnnotationExpr::getNameAsString)
-//                    .collect(Collectors.toList());
-//            if(annotations.contains("RequestBody")) return true;
-//        }
-//        return false;
-//    }
-
     private static boolean hasParameters(Map<TypeParameter, List<Clazz>> parameters) {
         return !parameters.get(TypeParameter.PARAMETER).isEmpty();
     }
-//    private static boolean hasParameters(NodeList<Parameter> parameters) {
-//        for(var parameter : parameters) {
-//            for(var annotation: parameter.getAnnotations()) {
-//                if(ANNOTATIONS_PARAMETERS.contains(annotation.getNameAsString())) return true;
-//            }
-//        }
-//        return false;
-//    }
 
     private static MemberValuePair buildParametersDocumentation(Structure method) {
         var parameters = method.getParameters();
@@ -197,23 +138,6 @@ public class SwaggerBuilder {
         return new MemberValuePair("parameters",
                 annotataionParameter);
     }
-
-
-//    private static MemberValuePair buildParametersDocumentation(MethodDeclaration method) {
-//        var parameters = method.getParameters();
-//        ArrayInitializerExpr annotataionParameter = null;
-//
-//        LOG.info("Checking annotation @Parameter(s) of " + method.getNameAsString());
-//        if(parameters.size() > 1) {
-//            LOG.info("Initialize construction of @Parameters annotations of method " + method.getNameAsString());
-//            annotataionParameter = buildManyParemeters(parameters);
-//        } else if(parameters.size() == 1)
-//            LOG.info("Initialize construction of @Parameter annotation of method " + method.getNameAsString());
-//            annotataionParameter = buildSingleParameter(parameters.get(0));
-//        return new MemberValuePair("parameters",
-//                annotataionParameter);
-//    }
-
 
     private static ArrayInitializerExpr buildSingleParameter(Clazz parameter) {
         var memberValueParir = buildContentParameter(parameter);
@@ -238,24 +162,6 @@ public class SwaggerBuilder {
     public static StringLiteralExpr valueOfType(String type) {
         return buildStringLiteralExpr( TYPE_MAP.get(type));
     }
-
-
-//    private static NodeList<MemberValuePair> buildContentParameter(Parameter parameter) {
-//        NodeList<MemberValuePair> parameters = new NodeList<>();
-//        LOG.info("Build properties of parameter " + parameter.getNameAsString());
-//        var typeParameter = parameter
-//                .getAnnotation(0)
-//                .getNameAsString()
-//                .equals("PathVariable") ? buildFieldAccess(PARAMETER_IN, PATH) :
-//                buildFieldAccess(PARAMETER_IN, QUERY);
-//        parameters.add(buildMemberValueStringLiteralExpr(NAME, parameter.getNameAsString()));
-//        parameters.add(buildMemberValueStringLiteralExpr("description", parameter.getNameAsString()));
-//        parameters.add(new MemberValuePair("required", new BooleanLiteralExpr(true)));
-//        parameters.add(new MemberValuePair("in", typeParameter));
-//        return parameters;
-//    }
-
-
     private static ArrayInitializerExpr buildManyParemeters(List<Clazz> parameters) {
         NodeList<AnnotationExpr> annotationsParameter = new NodeList<>();
         LOG.info("Building a list of method parameters");
@@ -267,20 +173,6 @@ public class SwaggerBuilder {
         array.getValues().addAll(annotationsParameter);
         return array;
     }
-
-//    private static ArrayInitializerExpr buildManyParemeters(NodeList<Parameter> parameters) {
-//        NodeList<AnnotationExpr> annotationsParameter = new NodeList<>();
-//
-//        LOG.info("Building a list of method parameters");
-//        parameters.forEach(parameter -> {
-//            var propertiesAndValue = buildContentParameter(parameter);
-//            annotationsParameter.add(new NormalAnnotationExpr(buildName(PARAMETER), propertiesAndValue));
-//        });
-//        var array = new ArrayInitializerExpr();
-//        array.getValues().addAll(annotationsParameter);
-//        return array;
-//    }
-
 
     public static NormalAnnotationExpr buildApiResponseAnnotation(Structure type) {
         LOG.info("Initializing construction of api responses annotations");
@@ -298,33 +190,6 @@ public class SwaggerBuilder {
         return new NormalAnnotationExpr(buildName(API_RESPONSES),
                 responseStatus);
     }
-
-//    public static NormalAnnotationExpr buildApiResponseAnnotation(Map<String, String> type) {
-//        LOG.info("Initializing construction of api responses annotations");
-//        var success = buildSuccessAnnotation(type);
-//        var notFound = buildBadNotFoundAnnotation();
-//        var badRequest = buildBadRequestAnnotation();
-//        var noContent = buildNoContentAnnotation();
-//        var internalError = buildInternalErrorAnnotation();
-//
-//        var arrayInitializerExpr = buildArrayInitializerExpr(success, notFound, badRequest, noContent, internalError);
-//        NodeList<MemberValuePair> responseStatus = new NodeList<>();
-//        var memberValuerPair = new MemberValuePair("value", arrayInitializerExpr);
-//        responseStatus.add(memberValuerPair);
-//
-//        return new NormalAnnotationExpr(buildName(API_RESPONSES),
-//                responseStatus);
-//    }
-
-//    private static String getClassForType(Type type) {
-//        LOG.info("Getting type of class");
-//        try {
-//            var clazz =  Class.forName(type.toString());
-//            return clazz.getSimpleName();
-//        } catch (ClassNotFoundException e) {
-//            return "Object";
-//        }
-//    }
 
     private static NormalAnnotationExpr buildSuccessAnnotation(Structure type) {
         LOG.info("Initializing construction of api responses annotations for status code 200");
@@ -344,45 +209,56 @@ public class SwaggerBuilder {
 
         return apiResponse;
     }
-//    private static NormalAnnotationExpr buildSuccessAnnotation(Map<String, String> type) {
-//        LOG.info("Initializing construction of api responses annotations for status code 200");
-//        var apiResponse = buildApiResponse("200", "Success");
-//        var entry = type.entrySet().stream().findFirst().get();
-//        if(!entry.getKey().equals("void") && !entry.getKey().equals("Void")) {
-//            apiResponse.getPairs().add(buildModelRequestsAndResponse(entry.getValue(), false));
-//        } else if(entry.getKey().equals("List") ||
-//                entry.getKey().equals("Set") ||
-//                entry.getKey().equals("Colletions")) {
-//            LOG.info("Adding method for Collection of objects");
-//        }
-//        return apiResponse;
-//    }
 
-    private static NormalAnnotationExpr buildBadNotFoundAnnotation() {
-        LOG.info("Initializing construction of api responses annotations for status code 204");
-        return buildApiResponse("204", "Not Found");
-    }
-    private static NormalAnnotationExpr buildNoContentAnnotation() {
-        LOG.info("Initializing construction of api responses annotations for status code 400");
-        return buildApiResponse("404", "No Content");
+    private static MemberValuePair buildModelRequestsAndResponse(String object, boolean requestBody) {
+        LOG.info("Initializing construction of model request and response");
+        //Construir exemples
+        LOG.info("Building content of annotation @ExampleObject");
+        var examplesPairs = newInstanceMemberValuePair();
+        examplesPairs.add(new MemberValuePair(NAME, buildStringLiteralExpr(object)));
+        examplesPairs.add(new MemberValuePair(REF, buildStringLiteralExpr(PATH_EXAMPLE_OBJECT
+                .concat(object.concat(DOT_JSON)))));
+
+        //Construir schema
+        LOG.info("Building content of annotation @Schema");
+        var schemaPairs = newInstanceMemberValuePair();
+        schemaPairs.add(new MemberValuePair(NAME, buildStringLiteralExpr(object)));
+        schemaPairs.add(new MemberValuePair(IMPLEMENTATIONS, buildClassExpr(object)));
+
+        //Construir o content
+        LOG.info("Building content of annotation @Content");
+        var contentPairs = newInstanceMemberValuePair();
+        contentPairs.add(buildContentTypePair(MEDIA_TYPE));
+        contentPairs.add(buildSchemaPair(SCHEMA, schemaPairs));
+        contentPairs.add(buildExampleObjectPair(EXAMPLE_OBJECT, examplesPairs));
+
+
+        //Criar ArrayContent
+        LOG.info("Adding content in array of annotation @Content");
+        var contentArray = new ArrayInitializerExpr();
+        contentArray.getValues().add(buildContentArrayExpr(CONTENT, contentPairs));
+
+        //Retorna se for requestBody
+        LOG.info("Checking if has request body in operation of method");
+        if (!requestBody) return new MemberValuePair(CONTENT[0], contentArray);
+
+        //Adicionar RequestBody
+        LOG.info("Building propertie requestBody of annotation @Operation");
+        var requestBodyPairs = newInstanceMemberValuePair();
+        requestBodyPairs.add(new MemberValuePair(CONTENT[0], contentArray));
+
+        //Return requestBody ou Objeto de response
+        return new MemberValuePair(REQUEST_BODY[0],
+                new NormalAnnotationExpr(buildName(REQUEST_BODY[1]), requestBodyPairs));
     }
 
-    private static NormalAnnotationExpr buildBadRequestAnnotation() {
-        LOG.info("Initializing construction of api responses annotations for status code 400");
-        return buildApiResponse("400", "Bad Request");
-    }
 
-    private static NormalAnnotationExpr buildInternalErrorAnnotation() {
-        LOG.info("Initializing construction of api responses annotations for status code 500");
-        return buildApiResponse("500", "Internal Server Error");
-    }
-
-    public static NormalAnnotationExpr buildOperation(String summary, String description, METHOD method) {
+    public static NormalAnnotationExpr buildOperation(String summary, String description, String verbHttp) {
         LOG.info("Building operation annotation");
         var nodeListMember = new NodeList<MemberValuePair>();
         var memberValueOperation =  new MemberValuePair("summary", buildStringLiteralExpr(summary));
         var memberValueDescription = new MemberValuePair("description", buildStringLiteralExpr(description));
-        var memberValueMethod = new MemberValuePair("method", buildStringLiteralExpr(method.getValue()));
+        var memberValueMethod = new MemberValuePair("method", buildStringLiteralExpr(verbHttp));
         nodeListMember.add(memberValueOperation);
         nodeListMember.add(memberValueDescription);
         nodeListMember.add(memberValueMethod);
@@ -417,6 +293,12 @@ public class SwaggerBuilder {
         return contentsValue;
     }
 
+    private static MemberValuePair buildArraySchema(String requestBody) {
+        //TODO: IMPLEMENTAR EXEMPLOS DE ARRAYS
+        return null;
+    }
+
+
     private static MemberValuePair buildExample(String requestBody) {
         LOG.info("Building example object annotation");
         return new MemberValuePair(
@@ -432,10 +314,6 @@ public class SwaggerBuilder {
         return new MemberValuePair(exampleObject[0], new NormalAnnotationExpr(buildName(exampleObject[1]), examplesPairs));
     }
 
-    private static MemberValuePair buildArraySchema(String requestBody) {
-        //TODO: IMPLEMENTAR EXEMPLOS DE ARRAYS
-        return null;
-    }
 
     private static MemberValuePair buildSchema(String requestBody) {
         LOG.info("Building schema propertie and schema annotation");
@@ -462,62 +340,43 @@ public class SwaggerBuilder {
         memberList.add(memberExampleObject);
          return memberList;
     }
+
     private static Name buildName(String name) {return new Name(name);}
 
     private static NameExpr buildNameExpr(String name) {return new NameExpr(name);}
 
     private static StringLiteralExpr buildStringLiteralExpr(String name) {return new StringLiteralExpr(name);}
-    private static FieldAccessExpr obterAccessExpr(String scope, String field) {
+
+    public static FieldAccessExpr buildAccessExpr(String scope, String field) {
         return new FieldAccessExpr(buildNameExpr(scope), field);
+    }
+
+    private static NormalAnnotationExpr buildBadNotFoundAnnotation() {
+        LOG.info("Initializing construction of api responses annotations for status code 204");
+        return buildApiResponse("204", "Not Found");
+    }
+
+    private static NormalAnnotationExpr buildNoContentAnnotation() {
+        LOG.info("Initializing construction of api responses annotations for status code 400");
+        return buildApiResponse("404", "No Content");
+    }
+
+    private static NormalAnnotationExpr buildBadRequestAnnotation() {
+        LOG.info("Initializing construction of api responses annotations for status code 400");
+        return buildApiResponse("400", "Bad Request");
+    }
+
+    private static NormalAnnotationExpr buildInternalErrorAnnotation() {
+        LOG.info("Initializing construction of api responses annotations for status code 500");
+        return buildApiResponse("500", "Internal Server Error");
     }
 
     private static ClassExpr buildClassExpr(String className) {
         return new ClassExpr(parseClassType(className));
     }
+
     private static ClassOrInterfaceType parseClassType(String className) {
         return StaticJavaParser.parseClassOrInterfaceType(className);
-    }
-
-    private static MemberValuePair buildModelRequestsAndResponse(String object, boolean requestBody) {
-        LOG.info("Initializing construction of model request and response");
-        //Construir exemples
-        LOG.info("Building content of annotation @ExampleObject");
-        var examplesPairs = newInstanceMemberValuePair();
-        examplesPairs.add(new MemberValuePair(NAME, buildStringLiteralExpr(object)));
-        examplesPairs.add(new MemberValuePair(REF, buildStringLiteralExpr(PATH_EXAMPLE_OBJECT
-                .concat(object.concat(DOT_JSON)))));
-
-        //Construir schema
-        LOG.info("Building content of annotation @Schema");
-        var schemaPairs = newInstanceMemberValuePair();
-        schemaPairs.add(new MemberValuePair(NAME, buildStringLiteralExpr(object)));
-        schemaPairs.add(new MemberValuePair(IMPLEMENTATIONS, buildClassExpr(object)));
-
-        //Construir o content
-        LOG.info("Building content of annotation @Content");
-        var contentPairs = newInstanceMemberValuePair();
-        contentPairs.add(buildContentTypePair(MEDIA_TYPE));
-        contentPairs.add(buildSchemaPair(SCHEMA, schemaPairs));
-        contentPairs.add(buildExampleObjectPair(EXAMPLE_OBJECT, examplesPairs));
-
-
-        //Criar ArrayContent
-        LOG.info("Adding content in array of annotation @Content");
-        var contentArray = new ArrayInitializerExpr();
-        contentArray.getValues().add(obterContentArrayExpr(CONTENT, contentPairs));
-
-        //Retorna se for requestBody
-        LOG.info("Checking if has request body in operation of method");
-        if (!requestBody) return new MemberValuePair(CONTENT[0], contentArray);
-
-        //Adicionar RequestBody
-        LOG.info("Building propertie requestBody of annotation @Operation");
-        var requestBodyPairs = newInstanceMemberValuePair();
-        requestBodyPairs.add(new MemberValuePair(CONTENT[0], contentArray));
-
-        //Return requestBody ou Objeto de response
-        return new MemberValuePair(REQUEST_BODY[0],
-                new NormalAnnotationExpr(buildName(REQUEST_BODY[1]), requestBodyPairs));
     }
 
     private static NormalAnnotationExpr buildAnnotationExpr(String name, MemberValuePair... pairs) {
@@ -551,7 +410,7 @@ public class SwaggerBuilder {
         return new MemberValuePair(schema[0], new NormalAnnotationExpr(buildName(schema[1]), schemaPairs));
     }
 
-    private static Expression obterContentArrayExpr(String[] content, NodeList<MemberValuePair> contentPairs) {
+    private static Expression buildContentArrayExpr(String[] content, NodeList<MemberValuePair> contentPairs) {
         return new NormalAnnotationExpr(buildName(CONTENT[1]), contentPairs);
     }
     private static MemberValuePair buildMemberValueStringLiteralExpr(String label, String value) {

@@ -126,7 +126,7 @@ public class FileUtils {
                 LOG.info("Iterating the list of method of original class");
                 originalClass.getMethods().forEach(method -> {
 
-                    var methodStruct = loadMethodStructure(method);
+                    Structure methodStruct = loadMethodStructure(method, originalClass.getNameAsString());
 
                     //Verificar se o método não é público
                     LOG.info("checking if method modifier is public");
@@ -174,7 +174,6 @@ public class FileUtils {
             }
         });
     }
-
 
     private static void addDocumentationOfSwaagerIfNotExists(MethodDeclaration method, Structure methodStruct) {
         if(methodStruct.isHasOperation() || !method.hasModifier(Modifier.Keyword.PUBLIC)) return;

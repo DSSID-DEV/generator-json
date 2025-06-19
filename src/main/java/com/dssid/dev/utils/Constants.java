@@ -31,7 +31,6 @@ public class Constants {
     public static final String QUERY = "QUERY";
     public static final String POSIX = "posix";
     public static final String OBJECT = "Object";
-    public static final String PARAMETER_IN= "ParameterIn";
     public static final String STRING = "String";
     public static final String DOUBLE = "Double";
     public static final String PUBLIC = "public";
@@ -47,13 +46,14 @@ public class Constants {
     public static final String PARAMETERS = "Parameters";
     public static final String SRC_JAVA = "src/main/java";
     public static final String INTERFACES = "/interfaces";
+    public static final String PARAMETER_IN= "ParameterIn";
     public static final String PERMISSIO_RWXR = "rwxr-x---";
     public static final String API_RESPONSE = "ApiResponse";
     public static final String DOT_INTERFACES = ".interfaces";
     public static final String API_RESPONSES = "ApiResponses";
     public static final String IMPLEMENTATIONS = "implementation";
-    public static final String APPLICATION_JSON = "APPLICATION_JSON_VALUE";
     public static final String SERIAL_VERSION_UID = "serialVersionUID";
+    public static final String APPLICATION_JSON = "APPLICATION_JSON_VALUE";
     public static final String PATH_EXAMPLE_OBJECT = "@components/examples/";
     public static final String TARGET_PATH = "src/main/resources/swagger/examples";
     public static final String IMPORT_SWAGGER_TAG = "io.swagger.v3.oas.annotations.tags.Tag";
@@ -66,8 +66,8 @@ public class Constants {
 
     //constants do tipo array ou list
 
-    public static final String[] VOID = {"void", "Void"};
     public static final String[] GENERICS = {"?", "T"};
+    public static final String[] VOID = {"void", "Void"};
     public static final String[] SCHEMA = {"schema", "Schema"};
     public static final String[] CONTENT = {"content", "Content"};
     public static final String[] MEDIA_TYPE = {"mediaType", "MediaType"};

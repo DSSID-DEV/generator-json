@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum METHOD {
+public enum VerbHttp {
     POST("POST", 0),
     PUT("PUT", 1),
     GET("GET", 2),

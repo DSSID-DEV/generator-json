@@ -2,7 +2,6 @@ package com.dssid.dev.utils;
 
 import com.dssid.dev.domain.model.Clazz;
 import com.dssid.dev.domain.model.Structure;
-import com.dssid.dev.enums.METHOD;
 import com.dssid.dev.enums.TypeParameter;
 import com.dssid.dev.enums.TypeReturn;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -130,41 +129,25 @@ public class Utils {
         return ann.substring(0, ann.lastIndexOf("M")).toUpperCase();
     }
 
-    public static String[] createSummaryAndDescription(METHOD method) {
-        if(isPost(method)) return new String[]{"Register new ", "Endpoint to "};
-        else if(isPutOrPatch(method)) return new String[]{"Update a ", "Endpoint to "};
-        else if(isGet(method)) return new String[]{"Return to ", "Endpoint to "};
+    public static String[] createSummaryAndDescription(Structure method) {
+        if(isPost(method.getVerbHttp())) return new String[]{"Register new ", "Endpoint to "};
+        else if(isPutOrPatch(method.getVerbHttp())) return new String[]{"Update a ", "Endpoint to "};
+        else if(isGet(method.getVerbHttp())) return new String[]{"Return to ", "Endpoint to "};
         else return new String[]{"Remove to ", "Endpoint to "};
+    }
+
+    public static String extractControllerName(String controllerName) {
+        return controllerName.toLowerCase().replace("controller", "");
     }
     public static int lastIndexOf(String str, String regex) {
         return str.lastIndexOf(regex);
     }
 
-    public static Map<String, String> extractObject(MethodDeclaration methodDeclaration, boolean response) {
-        Map<String, String> responseObject = new HashMap<>();
-        System.out.println("METHODO -> " + methodDeclaration);
 
-//        System.out.println("toDescriptor -> " + methodDeclaration.toDescriptor());
-        System.out.println("getName -> " + methodDeclaration.getName());
-        System.out.println("getParameters -> " + methodDeclaration.getParameters());
-        System.out.println("getBody -> " + methodDeclaration.getBody());
-        System.out.println("getNameAsString -> " + methodDeclaration.getNameAsString());
-        System.out.println("getMetaModel -> " + methodDeclaration.getMetaModel());
-        System.out.println("toString -> " + methodDeclaration.toString());
-
-        System.out.println("String.valueOf(methodDeclaration) -> " + String.valueOf(methodDeclaration));
-        System.out.println("getDeclarationAsString -> " + methodDeclaration.getDeclarationAsString());
-
-        System.out.println("getType -> " + methodDeclaration.getType());
-        System.out.println("getTypeAsString -> " + methodDeclaration.getTypeAsString());
-        System.out.println("toTypeDeclaration -> " + methodDeclaration.toTypeDeclaration());
-        responseObject.put("Object", "Object");
-        return responseObject;
-    }
-
-    public static Structure loadMethodStructure(MethodDeclaration method) {
+    public static Structure loadMethodStructure(MethodDeclaration method, String controlName) {
         return Structure.builder()
-                .verb(getVerbHttp(method.getAnnotations()))
+                .controllerName(controlName)
+                .verbHttp(getVerbHttp(method.getAnnotations()))
                 .methodName(method.getNameAsString())
                 .parameters(getRequestParameters(method.getParameters()))
                 .response(getResponse(method.getTypeAsString()))
@@ -253,14 +236,6 @@ public class Utils {
                 .count();
     }
 
-    private static boolean isPathVariableOrRequestParam(NodeList<AnnotationExpr> annotations) {
-        return annotations.stream()
-                .filter(annotation -> annotation.getNameAsString()
-                        .equals("@".concat(ANNOTATIONS_PARAMETERS.get(2)))
-                        || annotation.getNameAsString()
-                        .equals("@".concat(ANNOTATIONS_PARAMETERS.get(0))))
-                .count() > 0;
-    }
     private static boolean isPathVariable(NodeList<AnnotationExpr> annotations) {
         return false;
     }
@@ -270,5 +245,4 @@ public class Utils {
                 filter(annotation -> annotation.getName().asString().equals(ANNOTATIONS_PARAMETERS.get(3)))
                 .count() > 0;
     }
-
 }
