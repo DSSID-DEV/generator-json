@@ -95,8 +95,7 @@ public class Utils {
 
     var geradorJson = new GeneratorJson();
     boolean canRun = geradorJson
-            .checkValidityOfClass(List
-                    .of(CLASSES));
+            .checkValidityOfClass(CLASSES);
     if (canRun) geradorJson.now(PATH);
     else log.info("No action was taken, you exited the operation!");
   }
