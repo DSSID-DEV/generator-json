@@ -7,10 +7,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Clazz {
+public class PropertyTypeName {
+
     private String name;
     private String type;
-    private String typeParameter;
-    private boolean isPrivate = false;
-    private boolean isCollection = false;
 }

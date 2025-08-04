@@ -1,5 +1,6 @@
 package com.dssid.dev.domain.model;
 
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -7,10 +8,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Clazz {
+public class VariableProperties {
     private String name;
+    private String columnName;
     private String type;
-    private String typeParameter;
-    private boolean isPrivate = false;
-    private boolean isCollection = false;
+    private boolean isPrivate;
+    private boolean isCollection;
 }

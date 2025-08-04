@@ -1,15 +1,13 @@
-package com.dssid.dev.utils;
+package com.dssid.dev.constants;
 
-import java.math.BigDecimal;
-import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
 import java.util.regex.Pattern;
 
 public class Constants {
+
 
     public static final int PUT = 1;
     public static final int GET = 2;
@@ -33,34 +31,49 @@ public class Constants {
     public static final String OBJECT = "Object";
     public static final String STRING = "String";
     public static final String DOUBLE = "Double";
+
+    public static final String COLUMN = "Column";
     public static final String PUBLIC = "public";
+    public static final String ENTITY = "@Entity";
     public static final String DOT_JAVA = ".java";
     public static final String DOT_JSON = ".json";
     public static final String BOOLEAN = "Boolean";
+    public static final String IN_PROPERTIE = "in";
+    public static final String SUCCESS = "Success";
     public static final String INTEGER = "Integer";
     public static final String DOT_CLASS = ".class";
     public static final String BARRA_INVERTIDA = "\\";
     public static final String OPERATION = "Operation";
     public static final String PARAMETER = "Parameter";
     public static final String INTERFACE = "Interface";
+    public static final String NOT_FOUND = "Not Found";
+    public static final String JOIN_TABLE = "JoinTable";
+    public static final String NO_CONTENT = "No Content";
     public static final String PARAMETERS = "Parameters";
+    public static final String INTERFACES = "interfaces";
+    public static final String JOIN_COLUMN = "JoinColumn";
     public static final String SRC_JAVA = "src/main/java";
-    public static final String INTERFACES = "/interfaces";
+    public static final String BAD_REQUEST = "Bad Request";
     public static final String PARAMETER_IN= "ParameterIn";
     public static final String PERMISSIO_RWXR = "rwxr-x---";
     public static final String API_RESPONSE = "ApiResponse";
+    public static final String EXAMPLE_PROPERTIE = "example";
     public static final String DOT_INTERFACES = ".interfaces";
     public static final String API_RESPONSES = "ApiResponses";
+    public static final String REQUIRED_PROPERTIE = "required";
     public static final String IMPLEMENTATIONS = "implementation";
+    public static final String DESCRIPTION_PROPERTIE = "description";
     public static final String SERIAL_VERSION_UID = "serialVersionUID";
+    public static final String PATH_VARIABLE_PROPERTIE = "PathVariable";
     public static final String APPLICATION_JSON = "APPLICATION_JSON_VALUE";
     public static final String PATH_EXAMPLE_OBJECT = "@components/examples/";
-    public static final String TARGET_PATH = "src/main/resources/swagger/examples";
+
+    public static final String INTERNAL_SERVER_ERROR = "Internal Server Error";
+    public static final String TARGET_PATH = "src/main/resources/swagger.examples";
+    public static final String JAVAX_PERSISTENCE_ENTITY = "@javax.persistence.Entity";
+    public static final String JAKARTA_PERSISTENCE_ENTITY = "@jakarta.persistence.Entity";
     public static final String IMPORT_SWAGGER_TAG = "io.swagger.v3.oas.annotations.tags.Tag";
-    public static final String ERROR_TYRING_TO_GENERATE_FILE = "Error trying to generate file";
-    public static final String ERROR_TRYING_TO_GET_CLASS_NAME = "Error trying to get class name";
-    public static final String ERROR_TRYING_TO_CREATE_DIRECTORY = "Error trying to create directory";
-    public static final String TAG_OPERATION = """
+   public static final String TAG_OPERATION = """
             @Operation(summary="descrição do método")
             """;
 
@@ -87,11 +100,20 @@ public class Constants {
             List.of("PostMapping", "PutMapping", "GetMapping", "DeleteMapping",
                     "PatchMapping");
 
+    public static final List<String> TYPES_BOOLEANS = List.of("boolean", "Boolean");
+    public static final List<String> TYPES_STRINGS = List.of("String", "char", "Character");
+    public static final List<String> TYPES_BYTES = List.of("byte", "Byte", "bytes", "Bytes");
+    public static final List<String> TYPES_DATES = List.of("Date", "LocalDate", "LocalDateTime", "Time");
+    public static final List<String> TYPES_WHOLE_NUMBERS = List.of("short", "Short", "int", "Integer", "long", "Long");
+    public static final List<String> TYPES_DECIMAL_NUMBERS = List.of("float", "Float", "double", "Double", "BigDecimal");
+
     public static final List<String> IMPORTATIONS =
             List.of("PostMapping", "GetMapping", "PutMapping", "DeleteMapping", "PatchMapping", "RequiredArgsConstructor",
                     "ResponseStatus", "lombok", "Service", "HttpStatus", "org.springframework.web.bind.annotation");
 
     public static final Pattern PATTERN_PARAMETERS = Pattern.compile("(@RequestBody|@PathVariable|@RequestParam)\\s+([^\\s,)]+)\\s+([^\\s,)]+)");
+    public static final Pattern PATTERN_TALBE = Pattern.compile("@Table\\s*\\(\\s*name\\s*=\\s*\"([^\"]+)\"");
+    public static final Pattern PATTERN_CLASS_NAME = Pattern.compile("(public\\s+(abstract\\s+)?class\\s+)(\\w+)");
 
     public static final List<String> IMPORTS_OF_SWAGGER = List.of(
             "io.swagger.v3.oas.annotations.Parameter", "io.swagger.v3.oas.annotations.enums.ParameterIn",
@@ -101,6 +123,10 @@ public class Constants {
             "io.swagger.v3.oas.annotations.responses.ApiResponses", "io.swagger.v3.oas.annotations.tags.Tag",
             "io.swagger.v3.oas.annotations.parameters.RequestBody");
 
+    public static final List<String> RELATION_SHIP_ANNOTATIONS = List.of(
+            "ManyToOne", "OneToOne", "ManyToMany", "OneToMany",
+            "JoinColumn", "JoinTable"
+    );
     public static final Map<String, String> TYPE_MAP = Map.ofEntries(
             Map.entry("int", "1"),
             Map.entry("Integer", "1"),
@@ -118,4 +144,6 @@ public class Constants {
             Map.entry("LocalDate", LocalDate.now().toString()),
             Map.entry("LocalDateTime", LocalDateTime.now().toString())
     );
+    public static final double LIMIAR_SIMILARIDADE = 90.0;
+    public static final String STARTING_ENTITY_SEARCH = "Starting entity search";
 }

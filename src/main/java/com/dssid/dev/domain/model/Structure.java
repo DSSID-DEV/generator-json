@@ -14,7 +14,7 @@ public class Structure {
     private String controllerName;
     private String methodName;
     private String verbHttp;
-    private Map<TypeReturn, Clazz> response = new HashMap<>();
+    private Map<TypeReturn, Clazz>  response = new HashMap<>();
     private Map<TypeParameter, List<Clazz>> parameters = new HashMap<>();
     private boolean hasOperation = false;
     private boolean hasApiResponses = false;
@@ -26,5 +26,9 @@ public class Structure {
             clazzes = new HashSet<>();
         }
         clazzes.add(objectName);
+    }
+
+    public void clean() {
+        this.clazzes.clear();
     }
 }

@@ -1,6 +1,7 @@
 package com.dssid.dev.utils;
 
 import com.dssid.dev.domain.model.Clazz;
+import com.dssid.dev.domain.model.Resources;
 import com.dssid.dev.domain.model.Structure;
 import com.dssid.dev.enums.TypeParameter;
 import com.dssid.dev.enums.TypeReturn;
@@ -16,7 +17,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,19 +28,80 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static com.dssid.dev.utils.Constants.*;
-import static com.dssid.dev.utils.VerificationType.*;
+import static com.dssid.dev.constants.Constants.*;
+import static com.dssid.dev.constants.MessageLog.ERROR_TRYING_TO_CREATE_DIRECTORY;
+import static com.dssid.dev.verification.VerificationType.*;
+import static com.dssid.dev.view.components.LogMessage.logMessage;
 
 public class Utils {
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+
+    static JTextArea logArea;
 
     public static Path definePath(String strPath) {
         var path = hasContent(strPath) ? strPath : TARGET_PATH;
         return Paths.get(path);
     }
 
-    public static void createDirectories(Path path) {
+    public static byte[] getByteValues() {
+        return String.valueOf(new Random().nextInt(0, 100)).getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static List<String> generateCanditates(String value) {
+        var tokens = splitCamelCase(value);
+        int size = tokens.size();
+
+        Map<Integer, List<String>> bySize = new HashMap<>();
+        for(int mask = 0; mask < (1 << size); mask++) {
+            int sizeT = Integer.bitCount(mask);
+            int finalMask = mask;
+            String candidate = IntStream.range(0, size)
+                    .filter(i -> (finalMask & (1 << i)) != 0)
+                    .mapToObj(tokens::get)
+                    .collect(Collectors.joining());
+            bySize.computeIfAbsent(sizeT, k -> new ArrayList<>()).add(candidate);
+        }
+
+        return bySize.entrySet().stream()
+                .sorted(Map.Entry.<Integer, List<String>> comparingByKey().reversed())
+                .flatMap(e -> e.getValue().stream())
+                .collect(Collectors.toList());
+    }
+
+    public static List<String> splitCamelCase(String value) {
+        return Arrays.stream(value.split("(?<=.)(?=\\p{Lu})"))
+                .collect(Collectors.toList());
+    }
+
+//    public static String nameProperty(String str, Payload payload) {
+//        Class<?> clazz = Payload.class;
+//        final String value;
+//        Arrays.stream(clazz.getDeclaredFields()).forEach(field -> {
+//            var get = field.getName().substring(0, 1).toUpperCase() + field.getName().substring(1);
+//            try {
+//                Method getter = clazz.getMethod(get);
+//             //   value = getter.invoke(get);
+//                var valueNormalized = normalize(value);
+//                if(isSimilar(valueNormalized, str)) {
+//                    return value;
+//                }
+//            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+//                throw new RuntimeException(e);
+//            }
+//        });
+//        return str;
+//    }
+
+    public static String normalize(String value) {
+        var string = toSnakeCamelCase(value).replace("_", "");
+        return string.replaceAll("[^a-z]", "");
+    }
+
+    public static void createDirectories(Path path, JTextArea jTextArea) {
+        logArea = jTextArea;
         try{
             //Verificar se o diretório não existe
             if(Files.notExists(path)) {
@@ -45,9 +110,13 @@ public class Utils {
                 //Criar diretório sem passar o attributes
                 else createDirecoty(path);
                 LOG.info("Directory " + path + " created with success");
+                LOG.error(ERROR_TRYING_TO_CREATE_DIRECTORY);
+                addMessageLog(ERROR_TRYING_TO_CREATE_DIRECTORY);
             }
         } catch(Exception e) {
             LOG.error(ERROR_TRYING_TO_CREATE_DIRECTORY);
+            LOG.error(ERROR_TRYING_TO_CREATE_DIRECTORY);
+            addMessageLog(ERROR_TRYING_TO_CREATE_DIRECTORY);
             throw new RuntimeException(ERROR_TRYING_TO_CREATE_DIRECTORY + path);
         }
     }
@@ -78,6 +147,48 @@ public class Utils {
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
     }
 
+    public static Resources extractPaths(String absoluteProjectPath) {
+
+        var resources = new Resources();
+        String pathProject;
+        if(absoluteProjectPath.contains(getPathMainJava())) {
+            pathProject = absoluteProjectPath.substring(0, absoluteProjectPath.indexOf(getPathMainJava()));
+            var project = pathProject.substring(lastIndexOf(
+                    pathProject.substring(0, lastIndexOf(
+                            pathProject, getDefaultSystemBar())),
+                    getDefaultSystemBar())
+            ).replace(getDefaultSystemBar(), "");
+            resources.setProject(project);
+            resources.setPathProject(pathProject);
+            resources.setMainDirJava(getPathMainJava());
+            resources.setMainDirResources(getPathMainResources());
+            resources.setPackageController(absoluteProjectPath
+                    .substring(absoluteProjectPath.indexOf(getPathMainJava()) + getPathMainJava().length()));
+            resources.setAbsolutPathPackege(absoluteProjectPath);
+        }
+        return resources;
+    }
+
+    private static String getPathMainResources() {
+        return getPathMain() + "resources" + getSeparator();
+    }
+
+    private static String getPathMain() {
+        return "src" + getSeparator() + "main" + getSeparator();
+    }
+
+    private static String getPathMainJava() {
+        return getPathMain() + "java" + getSeparator();
+    }
+
+    private static String getSeparator() {
+        return File.separator;
+    }
+
+    public static String getDefaultSystemBar() {
+        return isWindows() ? "\\" : "/";
+    }
+
     public static void getValueEnum(String name, Class<?> type, ObjectNode node) {
 
         for (var map: valueEnum(type).entrySet()){
@@ -105,7 +216,12 @@ public class Utils {
     public static String fileName(String str) {
         if(stringNotHasContent(str)) return "";
         int lastIndexDot = lastIndexOf(str, ".");
-        return lastIndexDot >= 0? str.substring(lastIndexDot +1) : str;
+        return lastIndexDot >= 0 ? str.substring(lastIndexDot +1) : str;
+    }
+
+    public static String getNameClassOfCollection(String str) {
+        if(!containsDiamoent(str)) return str;
+        return str.substring(str.indexOf("<") + 1, lastIndexOf(str, ">"));
     }
 
     public static Class<?> getNameClassInCollection(String str) throws ClassNotFoundException {
@@ -125,8 +241,8 @@ public class Utils {
                 .map(AnnotationExpr::getNameAsString)
                 .filter(annotation -> ANNOTATIONS_MAPPING.contains(annotation))
                 .findFirst().orElse(null);
-
-        return ann.substring(0, ann.lastIndexOf("M")).toUpperCase();
+        System.out.println("Error -> " + ann);
+        return ann != null ? ann.substring(0, ann.lastIndexOf("M")).toUpperCase() : null;
     }
 
     public static String[] createSummaryAndDescription(Structure method) {
@@ -143,8 +259,9 @@ public class Utils {
         return str.lastIndexOf(regex);
     }
 
-
     public static Structure loadMethodStructure(MethodDeclaration method, String controlName) {
+        System.out.println(controlName);
+        System.out.println(method.getNameAsString());
         return Structure.builder()
                 .controllerName(controlName)
                 .verbHttp(getVerbHttp(method.getAnnotations()))
@@ -180,7 +297,7 @@ public class Utils {
         return responseEntity;
     }
 
-    private static String extractObjectType(String object) {
+    public static String extractObjectType(String object) {
         int startIndex = object.indexOf("<")+1;
         int lastIndex = object.lastIndexOf(">");
         return object.substring(startIndex, lastIndex);
@@ -245,4 +362,15 @@ public class Utils {
                 filter(annotation -> annotation.getName().asString().equals(ANNOTATIONS_PARAMETERS.get(3)))
                 .count() > 0;
     }
+
+    public static String toSnakeCamelCase(String value) {
+        if(!isNotBlank(value)) return value;
+
+        return value.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+    }
+
+    private static void addMessageLog(String message) {
+        logMessage(message, logArea);
+    }
+
 }

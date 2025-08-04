@@ -1,48 +1,39 @@
-package com.dssid.dev;
+package com.dssid.dev.outros;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+import javax.swing.*;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
 
 import static com.dssid.dev.utils.Utils.*;
-import static com.dssid.dev.utils.Constants.*;
-import static com.dssid.dev.utils.VerificationType.*;
+import static com.dssid.dev.constants.Constants.*;
+import static com.dssid.dev.constants.MessageLog.*;
+import static com.dssid.dev.verification.VerificationType.*;
+import static com.dssid.dev.view.components.LogMessage.logMessage;
 
 public class GeneratorJson {
-
     private static final Logger LOG = LoggerFactory.getLogger(GeneratorJson.class);
-    private static final Scanner scanner = new Scanner(System.in);
-    private List<Class<?>> classes;
-
-    //Criar um vericador das classes
-    public boolean checkValidityOfClass(List<Class<?>> classes) {
-        System.out.println("Check that the class match what is expected.");
-        this.classes = classes;
-
-        //Listar as classes para validar se são as esperadas
-        this.classes.forEach(clazz -> System.out.println("-> " +clazz.getName()));
-
-        System.out.println("Type 'y' to generate file or 'n' to exit: ");
-        return scanner.nextLine().equals("y");
-    }
+    static JTextArea logArea;
 
     //Criar um método que irá iniciar o processo de geração do arquivo json
-    public void now(String path) {
+    public static void now(Path pathRoot, Class<?> clazz,  JTextArea textArea) {
+        logArea = textArea;
         //Definir o path onde o arquivo vai ser criado
-        var target = definePath(path);
+
+        Path target = Paths.get(pathRoot + File.separator + TARGET_PATH);
 
         //Criar o diretório definido
-        createDirectories(target);
+        createDirectories(target, logArea);
 
         //Criar um ObjectMapper
         var mapper = new ObjectMapper();
@@ -50,38 +41,37 @@ public class GeneratorJson {
         //Configurar o formato do arquivo json
         configurationFormatJson(mapper);
 
-        //percorrer a lista de classes e gerar arquivos json
-        this.classes.forEach(clazz -> {
-            try {
-                //Criar o json a partir do método
-                var json = generateJson(mapper, clazz.getName());
+        try {
+            //Criar o json a partir do método
+            var json = generateJson(mapper, clazz);
 
-                //Obter o nome do arquivo a ser gerado
-                var name = fileName(clazz.getName()).concat(JSON);
+            //Obter o nome do arquivo a ser gerado
+            var name = fileName(clazz.getName()).concat(JSON);
 
-                //Cria o arquivo em branco
-                var file = target.resolve(name);
+            //Cria o arquivo em branco
+            var file = target.resolve(name);
 
-                //Escrever os dados do json gerado no arquivo criado, passando o conteúdo.
+            //Escrever os dados do json gerado no arquivo criado, passando o conteúdo.
 //                Files.writeString(file, json.toString());
-                mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), json);
-                LOG.info("File " + name + " created with success!");
-            }catch(IOException e) {
-                LOG.error(ERROR_TRYING_TO_GET_CLASS_NAME);
-                throw new RuntimeException(ERROR_TRYING_TO_GET_CLASS_NAME + ": " + e);
-            } catch (ClassNotFoundException e) {
-                LOG.error(ERROR_TRYING_TO_GET_CLASS_NAME);
-                throw new RuntimeException(ERROR_TRYING_TO_GET_CLASS_NAME + ": " + e);
-            }
-        });
+            mapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), json);
+            LOG.info(messageCuston(FILE_JSON_CREATED_WITH_SUCCESS, name));
+            addMessageLog(messageCuston(FILE_JSON_CREATED_WITH_SUCCESS, name));
+        }catch(IOException e) {
+            LOG.error(ERROR_TRYING_TO_GET_CLASS_NAME);
+            throw new RuntimeException(ERROR_TRYING_TO_GET_CLASS_NAME + ": " + e);
+        } catch (ClassNotFoundException e) {
+            LOG.error(ERROR_TRYING_TO_GET_CLASS_NAME);
+            throw new RuntimeException(ERROR_TRYING_TO_GET_CLASS_NAME + ": " + e);
+        }
+
     }
 
-    private ObjectNode generateJson(ObjectMapper mapper, String name) throws ClassNotFoundException {
-        var clazz = Class.forName(name);
+    private static ObjectNode generateJson(ObjectMapper mapper, Class<?> clazz) throws ClassNotFoundException {
+        //var clazz = Class.forName(name);
         return generate(clazz, mapper);
     }
 
-    private ObjectNode generate(Class<?> clazz, ObjectMapper mapper) {
+    private static ObjectNode generate(Class<?> clazz, ObjectMapper mapper) {
         //Fabricar um objeto do tipo ObjectNode
         var node = mapper.createObjectNode();
 
@@ -107,6 +97,7 @@ public class GeneratorJson {
             else if(isTypeDateOrLocalDate(type)) node.put(name, LocalDate.now().toString());
             else if(isTypeLocalDateTime(type)) node.put(name, LocalDateTime.now().toString());
             else if(isTypeBoolean(type)) node.put(name, true);
+            else if(isBytes(type)) node.put(name, getByteValues());
             else if(isTypeEnum(type)) {
                 //TODO: resolver retorno do enum (não está pegando o valor quando é paramentrizado)
                 getValueEnum(name, type, node);
@@ -170,7 +161,7 @@ public class GeneratorJson {
         return node;
     }
 
-    private Class<?> extractGenercType(Field field) {
+    private static Class<?> extractGenercType(Field field) {
         //Pega o nome do tipo
         String typeName = field.getGenericType().getTypeName();
 
@@ -188,5 +179,9 @@ public class GeneratorJson {
             }
         }
         return Object.class;
+    }
+
+    private static void addMessageLog(String message) {
+        logMessage(message, logArea);
     }
 }
