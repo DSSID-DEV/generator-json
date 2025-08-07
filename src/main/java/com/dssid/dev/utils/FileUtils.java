@@ -195,10 +195,13 @@ public class FileUtils {
 
     }
 
-    private static void extractDataFromEntity(Path path) {
+    private static void extractDataFromEntity(Path path) throws FileNotFoundException {
 
-        var tableName = findTableName(path);
-
+        var cuc = getCompilationUnitClass(path.toFile());
+        table = extractTableFromEntity(cuc);
+        var entityClass = getParseClassJava(cuc);
+//        ClazzUtilInterface instanceProperties =
+//        var properties =  instanceProperties.getInstanceProperties(entityClass);
     }
 
     private static String findTableName(Path path) {
@@ -211,13 +214,12 @@ public class FileUtils {
             var classMatch = PATTERN_CLASS_NAME.matcher(content);
             if(classMatch.find()) {
                 var className =  classMatch.group(3);
-                return className
+                return className;
             }
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
+        return null;
     }
 
     public static void runInterfaceBuildingwithSwaggerDocumentation(Resources resources, Set<Path> controllers, JTextArea jTextArea) {

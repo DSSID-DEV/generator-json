@@ -7,4 +7,6 @@ public interface ClazzUtilInterface {
 
 
     Payload getPayloadProperties(ClassOrInterfaceDeclaration classDecl, ClassOrInterfaceDeclaration entity);
+
+    Payload getInstanceProperties(ClassOrInterfaceDeclaration entityClass);
 }
