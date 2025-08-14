@@ -8,5 +8,5 @@ public interface ClazzUtilInterface {
 
     Payload getPayloadProperties(ClassOrInterfaceDeclaration classDecl, ClassOrInterfaceDeclaration entity);
 
-    Payload getInstanceProperties(ClassOrInterfaceDeclaration entityClass);
+    Payload getInstanceProperties(ClassOrInterfaceDeclaration entityClass, String table, String className);
 }

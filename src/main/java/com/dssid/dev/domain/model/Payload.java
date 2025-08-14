@@ -16,17 +16,8 @@ public class Payload {
     List<VariableProperties> properties;
 
     private List<Payload> collection;
-    public String getClassName() {
-        return className;
-    }
 
-    public void setClassName(String className) {
-        this.className = className;
-    }
 
-    public List<VariableProperties> getProperties() {
-        return this.properties;
-    }
 
     public void addPropertie(VariableProperties propertie) {
         if(this.properties == null) this.properties = new ArrayList<>();

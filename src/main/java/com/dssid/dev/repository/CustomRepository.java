@@ -29,7 +29,28 @@ public class CustomRepository {
         this.databaseConfig = new DatabaseConfig();
     }
 
+    public void getValueFromDataBase(Payload entity) {
+        var extractedColumns = entity.getProperties().stream()
+                .map(VariableProperties::getColumnName)
+                .collect(Collectors.joining(", "));
+        table = entity.getTableName();
+        var query = findDataBaseQuery(extractedColumns);
 
+        try (var connect = databaseConfig.getConnection();
+             var statment = connect.createStatement();
+             var resultSet = statment.executeQuery(query)){
+
+            while(resultSet.next()){
+                for(var property : entity.getProperties()) {
+                    var column = property.getColumnName();
+                    property.setValue(resultSet.getObject(column));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
 
 
     public Map<String, Object> getPropertieValueOfInstance(Payload payload, String object) {
@@ -124,5 +145,6 @@ public class CustomRepository {
         }
         return null;
     }
+
 
 }

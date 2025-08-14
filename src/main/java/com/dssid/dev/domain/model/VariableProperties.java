@@ -12,6 +12,7 @@ public class VariableProperties {
     private String name;
     private String columnName;
     private String type;
+    private Object value;
     private boolean isPrivate;
     private boolean isCollection;
 }

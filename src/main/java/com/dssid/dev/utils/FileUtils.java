@@ -5,6 +5,7 @@ import com.dssid.dev.domain.model.Payload;
 import com.dssid.dev.domain.model.Resources;
 import com.dssid.dev.domain.model.Structure;
 import com.dssid.dev.enums.TypeParameter;
+import com.dssid.dev.repository.CustomRepository;
 import com.dssid.dev.utils.interfaces.ClazzUtilInterface;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.dssid.dev.config.PropertieApplication.addProperty;
@@ -196,30 +198,40 @@ public class FileUtils {
     }
 
     private static void extractDataFromEntity(Path path) throws FileNotFoundException {
+        var entity = getEntity(path);
+        var repository = new CustomRepository();
+        repository.getValueFromDataBase(entity);
 
-        var cuc = getCompilationUnitClass(path.toFile());
-        table = extractTableFromEntity(cuc);
-        var entityClass = getParseClassJava(cuc);
-//        ClazzUtilInterface instanceProperties =
-//        var properties =  instanceProperties.getInstanceProperties(entityClass);
     }
 
-    private static String findTableName(Path path) {
+    private static Payload getEntity(Path path) throws FileNotFoundException {
+        var cuc = getCompilationUnitClass(path.toFile());
+        var className = findClassName(getContent(path), PATTERN_CLASS_NAME);
+        var table = extractTableFromEntity(cuc);
+        var entityClass = getClassOrInterfaceDeclaration(cuc);
+        var instanceProperties = new PayloadUtils();
+        var entity = instanceProperties.getInstanceProperties(entityClass, table, className);
+        entity.setClassName(className);
+        entity.setTableName(table);
+        return entity;
+    }
+
+    private static String getContent(Path path) {
         try {
-            String content = Files.readString(path);
-
-            var matcher = PATTERN_TALBE.matcher(content);
-            if(matcher.find()) return matcher.group(1);
-
-            var classMatch = PATTERN_CLASS_NAME.matcher(content);
-            if(classMatch.find()) {
-                var className =  classMatch.group(3);
-                return className;
-            }
+            return Files.readString(path);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return null;
+    }
+
+    private static String findClassName(String content, Pattern pattern) {
+        var macher = pattern.matcher(content);
+        return macher.group(3);
+    }
+
+    private static String findTableName(String content, Pattern pattern) {
+        var matcher = pattern.matcher(content);
+        return matcher.group(1);
     }
 
     public static void runInterfaceBuildingwithSwaggerDocumentation(Resources resources, Set<Path> controllers, JTextArea jTextArea) {

@@ -8,6 +8,7 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.type.Type;
+import lombok.NoArgsConstructor;
 
 import java.io.FileNotFoundException;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import static com.dssid.dev.utils.Utils.toSnakeCamelCase;
 import static com.dssid.dev.verification.VerificationType.isCustomClass;
 import static com.dssid.dev.verification.VerificationType.isSimilar;
 
+@NoArgsConstructor
 public class PayloadUtils implements ClazzUtilInterface {
     private Payload payload;
 
@@ -60,6 +62,41 @@ public class PayloadUtils implements ClazzUtilInterface {
             });
         });
         return payload;
+    }
+
+    @Override
+    public Payload getInstanceProperties(ClassOrInterfaceDeclaration entity, String table, String className) {
+        var instanceEntity = new Payload();
+        instanceEntity.setTableName(table);
+        instanceEntity.setClassName(className);
+
+        entity.getFields().forEach(fieldEntity -> {
+            fieldEntity.getVariables().forEach(variableEntity -> {
+                if(isSerialVersionUID(variableEntity.getNameAsString())) return;
+                if(fieldEntity.getElementType().isArrayType()) return;
+                var variable = extractVariableProperties(fieldEntity);
+                var columnName = extractColumnName(fieldEntity, variableEntity, variable);
+                variable.setColumnName(columnName);
+                variable.setName(variableEntity.getNameAsString());
+
+                instanceEntity.addPropertie(variable);
+
+                });
+            });
+
+       return instanceEntity;
+    }
+
+    private VariableProperties extractVariableProperties(FieldDeclaration field) {
+        var variableProperties = new VariableProperties();
+        var isPrivate = field.isPrivate();
+        var fildType = field.getElementType();
+        var isCollection = fildType.isArrayType();
+        var type = extractType(fildType, isCollection);
+        variableProperties.setType(type);
+        variableProperties.setCollection(isCollection);
+        variableProperties.setPrivate(isPrivate);
+        return variableProperties;
     }
 
     private void getPropertiesToEntity(FieldDeclaration field, Optional<AnnotationExpr> annotation, VariableDeclarator variable, String fieldName) throws FileNotFoundException {
