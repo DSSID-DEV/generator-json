@@ -188,19 +188,27 @@ public class FileUtils {
 
 
 
-    public static void extractValueFromDataBase() {
+    public static void extractValueFromDataBase(Resources resources) {
         var dataExtracted = new DataExtractedDefault();
-
-        var paths = findEntityClasses(Path.of(dirMainResources), logArea);
+        var packageMainJava = resources.getPathProject().concat(resources.getMainDirJava());
+        var paths = findEntityClasses(Path.of(packageMainJava), logArea);
 
         paths.forEach(path -> extractDataFromEntity(path));
-
     }
 
-    private static void extractDataFromEntity(Path path) throws FileNotFoundException {
-        var entity = getEntity(path);
+    private static void extractDataFromEntity(Path path)  {
+
+        if(!isEntity(path)) return;
+
+        Payload entity = null;
+        try {
+            entity = getEntity(path);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         var repository = new CustomRepository();
         repository.getValueFromDataBase(entity);
+        System.out.println(entity.toString());
 
     }
 
@@ -226,7 +234,9 @@ public class FileUtils {
 
     private static String findClassName(String content, Pattern pattern) {
         var macher = pattern.matcher(content);
-        return macher.group(3);
+        if(macher.find()) return macher.group(3);
+
+        return null;
     }
 
     private static String findTableName(String content, Pattern pattern) {

@@ -125,7 +125,7 @@ public class MainScreem {
             throw new RuntimeException(e);
         }
 
-        extractValueFromDataBase();
+        extractValueFromDataBase(resources);
 
         logMessage(INITIALIZING_SWAGGER_DOCUMENTATION_BUILD_PROCESS, logArea);
         runInterfaceBuildingwithSwaggerDocumentation(resources, javaFiles, logArea);

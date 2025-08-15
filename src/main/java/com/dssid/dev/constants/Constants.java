@@ -113,7 +113,7 @@ public class Constants {
 
     public static final Pattern PATTERN_PARAMETERS = Pattern.compile("(@RequestBody|@PathVariable|@RequestParam)\\s+([^\\s,)]+)\\s+([^\\s,)]+)");
     public static final Pattern PATTERN_TALBE = Pattern.compile("@Table\\s*\\(\\s*name\\s*=\\s*\"([^\"]+)\"");
-    public static final Pattern PATTERN_CLASS_NAME = Pattern.compile("(public\\s+(abstract\\s+)?class\\s+)(\\w+)");
+    public static final Pattern PATTERN_CLASS_NAME = Pattern.compile("(public\\s*(abstract\\s*)?class\\s*)(\\w+)");
 
     public static final List<String> IMPORTS_OF_SWAGGER = List.of(
             "io.swagger.v3.oas.annotations.Parameter", "io.swagger.v3.oas.annotations.enums.ParameterIn",

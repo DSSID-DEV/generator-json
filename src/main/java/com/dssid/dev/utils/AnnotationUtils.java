@@ -21,9 +21,17 @@ import static com.dssid.dev.verification.VerificationType.isEntity;
 public class AnnotationUtils {
     public static String extractColumnName(FieldDeclaration field, VariableDeclarator variable, VariableProperties property) {
 
+        var annotationOptional = field.getAnnotationByName(JOIN_COLUMN);
+
+        if(annotationOptional.isPresent() && !property.isCollection()) {
+            //TODO: extrair propriedades da entidade agregada
+        }
+
+
         var annotationOptional = field.getAnnotationByName(COLUMN);
 
         if(!annotationOptional.isPresent() && !property.isCollection()) return toSnakeCamelCase(variable.getNameAsString());
+
 
         if(isCustomClass(property.getType())) return null;
 
