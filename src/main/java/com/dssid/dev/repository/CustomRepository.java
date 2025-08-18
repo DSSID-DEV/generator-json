@@ -6,11 +6,13 @@ import com.dssid.dev.domain.model.Payload;
 import com.dssid.dev.domain.model.VariableProperties;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.dssid.dev.constants.Constants.DOT;
 import static com.dssid.dev.repository.queries.Query.*;
 import static com.dssid.dev.verification.VerificationType.*;
 public class CustomRepository {
@@ -30,26 +32,75 @@ public class CustomRepository {
     }
 
     public void getValueFromDataBase(Payload entity) {
-        var extractedColumns = entity.getProperties().stream()
-                .map(VariableProperties::getColumnName)
-                .collect(Collectors.joining(", "));
-        table = entity.getTableName();
-        var query = findDataBaseQuery(extractedColumns);
-
+        var extractedColumns = buildColumn(entity);
+        var tables = getTables(entity);
+//        table = entity.getTableName();
+        var query = findDataBaseQuery(extractedColumns, tables);
+        System.out.println("QUERY: " + query);
         try (var connect = databaseConfig.getConnection();
              var statment = connect.createStatement();
              var resultSet = statment.executeQuery(query)){
 
             while(resultSet.next()){
                 for(var property : entity.getProperties()) {
-                    var column = property.getColumnName();
-                    property.setValue(resultSet.getObject(column));
+
+                    if(property.getValue() instanceof Payload) {
+                       var object = (Payload) property.getValue();
+                        for(var property2 : object.getProperties()) {
+                            var columnName = property2.getColumnName();
+                            property2.setValue(resultSet.getObject(columnName));
+                        }
+                        property.setValue(object);
+                    } else {
+                        var column = property.getColumnName();
+                        property.setValue(resultSet.getObject(column));
+                    }
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        System.out.println(entity.toString());
+    }
 
+    private List<String> getTables(Payload entity) {
+        List<String> tables = new ArrayList<>();
+        var tableName = entity.getTableName()+ " " + createAliasFromTableName(entity.getTableName());
+        entity.setTableName(tableName);
+        tables.add(tableName);
+        entity.getProperties().forEach(variable -> {
+            if (variable.getValue() instanceof Payload) {
+                var tableName2 = ((Payload) variable.getValue()).getTableName();
+                ((Payload) variable.getValue()).setTableName(tableName2);
+                tables.add(tableName2 + " " + createAliasFromTableName(tableName2));
+            }
+        });
+        return tables;
+    }
+
+    private String buildColumn(Payload entity) {
+        var alias = createAliasFromTableName(entity.getTableName());
+        String columns = entity.getProperties()
+                .stream()
+                .map(variable -> {
+                    if(variable.getValue() instanceof Payload payload2) {
+                        return getColumnNameFromAliasTable(alias, variable.getColumnName()).concat(", ") + buildColumn(payload2);
+                    }
+                    else return getColumnNameFromAliasTable(alias, variable.getColumnName());
+                })
+                .collect(Collectors.joining(", "));
+        return columns;
+    }
+
+    private String getColumnNameFromAliasTable(String alias, String columnName) {
+        return alias + DOT + columnName;
+    }
+
+    private String createAliasFromTableName(String tableName) {
+        var values = tableName.split("_");
+        int length = values.length;
+        if(length > 1) return values[0].substring(0, 2) + "_" + values[length - 1].substring(0, 2);
+        return values[0].substring(0, 3);
     }
 
 
@@ -112,6 +163,23 @@ public class CustomRepository {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String findDataBaseQuery(String columns, List<String> tables) {
+        var typeDatabase = databaseConfig.getParameter().getDbType();
+        var joinsTables = tables.size() > 1;
+        switch (typeDatabase) {
+            case ORACLE_SQL -> {
+                return joinsTables ? selectDataOracleWithJoinTableSQL(tables, columns) : selectDataOracleSQL(tables.get(0), columns);
+            }
+            case MY_SQL, POSTGRE_SQL -> {
+                return selectDataBaseWithJoinTableMySQL_PostgreSQL(tables, columns);
+            }
+            case SQL_SERVER -> {
+                return selectDataWithJoinTableSQLServer(tables, columns);
+            }
+        }
+        return null;
     }
 
     private String findDataBaseQuery(String columns) {

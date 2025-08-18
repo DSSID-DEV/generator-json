@@ -74,6 +74,7 @@ public class PayloadUtils implements ClazzUtilInterface {
             fieldEntity.getVariables().forEach(variableEntity -> {
                 if(isSerialVersionUID(variableEntity.getNameAsString())) return;
                 if(fieldEntity.getElementType().isArrayType()) return;
+                if(fieldEntity.getAnnotationByName("OneToMany").isPresent()) return;
                 var variable = extractVariableProperties(fieldEntity);
                 var columnName = extractColumnName(fieldEntity, variableEntity, variable);
                 variable.setColumnName(columnName);

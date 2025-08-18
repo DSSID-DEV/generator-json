@@ -189,6 +189,7 @@ public class FileUtils {
 
 
     public static void extractValueFromDataBase(Resources resources) {
+        projectPaths = resources;
         var dataExtracted = new DataExtractedDefault();
         var packageMainJava = resources.getPathProject().concat(resources.getMainDirJava());
         var paths = findEntityClasses(Path.of(packageMainJava), logArea);
@@ -210,6 +211,22 @@ public class FileUtils {
         repository.getValueFromDataBase(entity);
         System.out.println(entity.toString());
 
+    }
+
+    public static Payload loadObject(String className)  {
+        var directory = projectPaths.getPathProject().concat(projectPaths.getMainDirJava());
+        var paths = findEntityClasses(Path.of(directory), logArea);
+        var path = paths.stream().filter(p -> equalsClassName(p, className))
+                .findFirst().get();
+        try {
+            return getEntity(path);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static boolean equalsClassName(Path p, String className) {
+        return p.toFile().getName().equals(className);
     }
 
     private static Payload getEntity(Path path) throws FileNotFoundException {

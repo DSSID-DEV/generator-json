@@ -198,6 +198,15 @@ public class VerificationType {
         }
     }
 
+    public static boolean isObjectEntity(String type) {
+        return !isString(type) && !isBoolean(type)
+                && !isNumberInteger(type);
+    }
+
+    public static boolean notIsObjectEntity(String type) {
+        return !isObjectEntity(type);
+    }
+
     public static boolean isEntity(String content) {
         return content.contains(ENTITY) ||
                 content.contains(JAVAX_PERSISTENCE_ENTITY) ||

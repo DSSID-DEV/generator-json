@@ -13,10 +13,10 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import java.util.Optional;
 
 import static com.dssid.dev.constants.Constants.*;
+import static com.dssid.dev.utils.FileUtils.loadObject;
 import static com.dssid.dev.utils.JsonBuilder.getClassOrInterfaceDeclaration;
 import static com.dssid.dev.utils.Utils.toSnakeCamelCase;
-import static com.dssid.dev.verification.VerificationType.isCustomClass;
-import static com.dssid.dev.verification.VerificationType.isEntity;
+import static com.dssid.dev.verification.VerificationType.*;
 
 public class AnnotationUtils {
     public static String extractColumnName(FieldDeclaration field, VariableDeclarator variable, VariableProperties property) {
@@ -24,16 +24,16 @@ public class AnnotationUtils {
         var annotationOptional = field.getAnnotationByName(JOIN_COLUMN);
 
         if(annotationOptional.isPresent() && !property.isCollection()) {
-            //TODO: extrair propriedades da entidade agregada
+            if(isCustomClass(property.getType())) {
+                var object = loadObject(property.getType().concat(DOT_JAVA));
+                property.setValue(object);
+                return resolveColumnName(field, variable);
+            }
         }
 
-
-        var annotationOptional = field.getAnnotationByName(COLUMN);
+        annotationOptional = field.getAnnotationByName(COLUMN);
 
         if(!annotationOptional.isPresent() && !property.isCollection()) return toSnakeCamelCase(variable.getNameAsString());
-
-
-        if(isCustomClass(property.getType())) return null;
 
         return resolveColumnName(field, variable);
     }
